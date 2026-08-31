@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>不吃工具箱 - 本地离线的网页工具集</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧰</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<noscript><div style="padding:2rem;text-align:center">本工具箱需要启用 JavaScript 才能使用。</div></noscript>
+
+<aside class="sidebar">
+  <div class="logo">🧰<span class="logo-text">不吃工具箱</span></div>
+  <nav id="nav" class="nav"></nav>
+  <div class="sidebar-foot">🔒 所有功能均在本地浏览器中完成<br>文件不会被上传到任何服务器</div>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <h1 id="page-title">首页</h1>
+    <button id="theme-btn" class="icon-btn" title="切换深色 / 浅色主题">🌙</button>
+  </header>
+
+  <div class="content">
+
+    <!-- ===================== 首页 ===================== -->
+    <section id="view-home" class="view">
+      <div class="hero">
+        <div class="hero-title">不吃工具箱</div>
+        <p>图片压缩、PDF 处理、数据格式互转、Markdown、二维码、密码与哈希 —— 全部在你的浏览器本地运行，无需联网、无需安装，文件不出设备。</p>
+      </div>
+      <div id="home-cards" class="card-grid"></div>
+    </section>
+
+    <!-- ===================== 图片压缩 / 格式转换 ===================== -->
+    <section id="view-image" class="view" hidden>
+      <div class="card">
+        <div class="card-title">🖼️ 图片压缩 / 格式转换</div>
+        <p class="muted">基于 Canvas 在本地压缩图片或转换为 JPEG / PNG / WebP，支持批量处理。添加文件后自动处理，调整参数后点击「重新处理」。</p>
+        <div id="img-drop" class="dropzone">点击选择 或 拖入图片（可多选）</div>
+        <input type="file" id="img-file" accept="image/*" multiple hidden>
+        <div class="opts">
+          <label>输出格式
+            <select id="img-format">
+              <option value="image/jpeg">JPEG（体积小）</option>
+              <option value="image/png">PNG（无损）</option>
+              <option value="image/webp">WebP（更小）</option>
+              <option value="">保持原格式</option>
+            </select>
+          </label>
+          <label><span>质量 <span id="img-q-val" class="mono">80</span>%</span>
+            <input type="range" id="img-quality" min="10" max="100" value="80">
+          </label>
+          <label>最大宽度 px
+            <input type="number" id="img-maxw" min="0" placeholder="不缩放">
+          </label>
+          <label>最大高度 px
+            <input type="number" id="img-maxh" min="0" placeholder="不缩放">
+          </label>
+        </div>
+        <div id="img-list" class="result-list"></div>
+        <div class="actions">
+          <button class="btn primary" id="img-rerun" disabled>重新处理</button>
+          <button class="btn" id="img-zip" disabled>全部打包下载 (ZIP)</button>
+          <button class="btn ghost" id="img-clear">清空列表</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">💧 图片水印</div>
+        <p class="muted">Canvas 本地叠加绘制：文字或图片水印，支持九宫格定位与平铺，可批量处理。调整参数后自动重新应用。</p>
+        <div id="wm-drop" class="dropzone">点击选择 或 拖入图片（可多选）</div>
+        <input type="file" id="wm-file" accept="image/*" multiple hidden>
+        <div class="opts">
+          <label>水印类型
+            <select id="wm-type">
+              <option value="text" selected>文字</option>
+              <option value="image">图片</option>
+            </select>
+          </label>
+        </div>
+        <div id="wm-text-opts">
+          <div class="opts">
+            <label>水印文字 <input type="text" id="wm-text" value="仅供预览" style="width: 150px;"></label>
+            <label>字号 px <input type="number" id="wm-size" value="28" min="8" max="300" style="width: 76px;"></label>
+            <label>颜色 <input type="color" id="wm-color" value="#ffffff"></label>
+            <label><span>旋转 <span id="wm-r-val" class="mono">-30</span>°</span>
+              <input type="range" id="wm-rotate" min="-90" max="90" value="-30">
+            </label>
+          </div>
+        </div>
+        <div id="wm-image-opts" hidden>
+          <div class="opts">
+            <button class="btn" id="wm-img-pick">选择水印图（建议透明 PNG）</button>
+            <input type="file" id="wm-img-file" accept="image/*" hidden>
+            <span class="muted" id="wm-img-name">未选择</span>
+            <label><span>水印大小 <span id="wm-s-val" class="mono">20</span>%</span>
+              <input type="range" id="wm-scale" min="5" max="80" value="20">
+            </label>
+          </div>
+        </div>
+        <div class="opts">
+          <label><span>不透明度 <span id="wm-o-val" class="mono">60</span>%</span>
+            <input type="range" id="wm-opacity" min="5" max="100" value="60">
+          </label>
+          <label>位置
+            <select id="wm-pos">
+              <option value="tile" selected>平铺（满屏重复）</option>
+              <option value="tl">左上</option>
+              <option value="tc">中上</option>
+              <option value="tr">右上</option>
+              <option value="ml">左中</option>
+              <option value="mc">正中</option>
+              <option value="mr">右中</option>
+              <option value="bl">左下</option>
+              <option value="bc">中下</option>
+              <option value="br">右下</option>
+            </select>
+          </label>
+          <label>输出格式
+            <select id="wm-format">
+              <option value="image/png" selected>PNG</option>
+              <option value="image/jpeg">JPEG</option>
+              <option value="image/webp">WebP</option>
+            </select>
+          </label>
+        </div>
+        <div id="wm-preview-wrap" hidden>
+          <label class="lbl">效果预览（第一张）</label>
+          <div class="rb-frame" style="max-width: 480px;"><img id="wm-preview-img" alt="水印预览" style="max-width: 100%;"></div>
+        </div>
+        <div id="wm-list" class="result-list"></div>
+        <div class="actions">
+          <button class="btn primary" id="wm-apply" disabled>应用到全部</button>
+          <button class="btn" id="wm-zip" disabled>全部打包下载 (ZIP)</button>
+          <button class="btn ghost" id="wm-clear">清空</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🪄 图片去背景</div>
+        <p class="muted">基于 @imgly/background-removal 的 ISNet AI 模型，在你的浏览器本地推理，图片不会上传。<b>模型（约 40–80 MB）在开始处理时从官方 CDN 下载</b>，仅在本次页面内复用；浏览器可能临时缓存但不保证免下载。</p>
+        <div id="rb-drop" class="dropzone">点击选择 或 拖入一张图片</div>
+        <input type="file" id="rb-file" accept="image/*" hidden>
+        <div class="opts">
+          <label>AI 模型
+            <select id="rb-model">
+              <option value="isnet_fp16" selected>均衡 fp16（推荐）</option>
+              <option value="isnet_quint8">轻量 quint8（更快）</option>
+              <option value="isnet">精细 isnet（更慢）</option>
+            </select>
+          </label>
+          <label>输出格式
+            <select id="rb-out">
+              <option value="png" selected>透明背景 PNG</option>
+              <option value="white">白色背景 JPG</option>
+            </select>
+          </label>
+        </div>
+        <div class="rb-status" id="rb-status" hidden>
+          <div class="muted" id="rb-status-text"></div>
+          <div class="rb-bar"><div id="rb-bar-fill"></div></div>
+        </div>
+        <div id="rb-preview" class="rb-preview" hidden>
+          <div class="rb-pane">
+            <div class="t-label">原图</div>
+            <div class="rb-frame"><img id="rb-src-img" alt="原图"></div>
+          </div>
+          <div class="rb-pane">
+            <div class="t-label">去背景结果（灰白格子 = 透明区域）</div>
+            <div class="rb-frame checker"><img id="rb-out-img" alt="结果"></div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="rb-run" disabled>开始处理</button>
+          <button class="btn" id="rb-download" disabled>下载图片</button>
+          <button class="btn ghost" id="rb-clear">清空</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== PDF 工具 ===================== -->
+    <section id="view-pdf" class="view" hidden>
+      <div class="card">
+        <div class="card-title">📄 PDF 工具</div>
+        <p class="muted">合并 / 拆分基于 pdf-lib，转图片基于 pdf.js（Canvas 渲染）。全部本地处理。</p>
+        <div class="tabs" id="pdf-tabs">
+          <button class="tab active" data-mode="merge">合并</button>
+          <button class="tab" data-mode="split">拆分</button>
+          <button class="tab" data-mode="render">转图片</button>
+        </div>
+
+        <div id="pdf-pane-merge" class="pane">
+          <div id="pdf-merge-drop" class="dropzone">点击选择 或 拖入多个 PDF（按下方列表顺序合并，可调整顺序）</div>
+          <input type="file" id="pdf-merge-file" accept="application/pdf" multiple hidden>
+          <div id="pdf-merge-list" class="result-list"></div>
+          <div class="actions">
+            <button class="btn primary" id="pdf-merge-run" disabled>合并并下载</button>
+            <button class="btn ghost" id="pdf-merge-clear">清空</button>
+          </div>
+        </div>
+
+        <div id="pdf-pane-split" class="pane" hidden>
+          <div id="pdf-split-drop" class="dropzone">点击选择 或 拖入一个 PDF 文件</div>
+          <input type="file" id="pdf-split-file" accept="application/pdf" hidden>
+          <div class="opts">
+            <label>拆分方式
+              <select id="pdf-split-mode">
+                <option value="each">每页拆分为一个 PDF</option>
+                <option value="extract">提取页码范围（输出一个 PDF）</option>
+              </select>
+            </label>
+            <label id="pdf-split-range-wrap" hidden>页码范围
+              <input type="text" id="pdf-split-range" placeholder="如 1-3,5,8- （留空 = 全部）">
+            </label>
+          </div>
+          <div id="pdf-split-info" class="file-chip" hidden></div>
+          <div class="actions">
+            <button class="btn primary" id="pdf-split-run" disabled>执行拆分</button>
+          </div>
+        </div>
+
+        <div id="pdf-pane-render" class="pane" hidden>
+          <div id="pdf-render-drop" class="dropzone">点击选择 或 拖入一个 PDF 文件</div>
+          <input type="file" id="pdf-render-file" accept="application/pdf" hidden>
+          <div class="opts">
+            <label>页码范围 <input type="text" id="pdf-render-range" placeholder="留空 = 全部，如 1-3,5"></label>
+            <label>清晰度
+              <select id="pdf-render-scale">
+                <option value="1">1x（约 72 DPI）</option>
+                <option value="2" selected>2x（约 144 DPI）</option>
+                <option value="3">3x（约 216 DPI）</option>
+              </select>
+            </label>
+            <label>图片格式
+              <select id="pdf-render-format">
+                <option value="image/png">PNG</option>
+                <option value="image/jpeg">JPEG</option>
+              </select>
+            </label>
+          </div>
+          <div id="pdf-render-info" class="file-chip" hidden></div>
+          <div id="pdf-render-previews" class="thumb-grid"></div>
+          <div class="actions">
+            <button class="btn primary" id="pdf-render-run" disabled>转换为图片</button>
+            <button class="btn" id="pdf-render-zip" disabled>全部打包下载 (ZIP)</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== JSON / CSV / Excel 互转 ===================== -->
+    <section id="view-convert" class="view" hidden>
+      <div class="card">
+        <div class="card-title">🔁 JSON / CSV / Excel 互转</div>
+        <p class="muted">基于 SheetJS 解析与生成表格，全部在本地完成。CSV 输出自动带 BOM，Excel 打开不乱码。</p>
+        <div class="tabs" id="cv-tabs">
+          <button class="tab active" data-mode="tojson">Excel / CSV → JSON</button>
+          <button class="tab" data-mode="toexcel">JSON / CSV → Excel</button>
+        </div>
+
+        <div id="cv-pane-tojson" class="pane">
+          <div id="cv-drop" class="dropzone">点击选择 或 拖入 .xlsx / .xls / .csv 文件</div>
+          <input type="file" id="cv-file" accept=".xlsx,.xls,.csv" hidden>
+          <div class="opts" id="cv-sheet-wrap" hidden>
+            <label>工作表 <select id="cv-sheet"></select></label>
+            <label>输出格式
+              <select id="cv-out-format">
+                <option value="json">JSON（对象数组）</option>
+                <option value="csv">CSV</option>
+              </select>
+            </label>
+          </div>
+          <pre id="cv-tojson-preview" class="preview" hidden></pre>
+          <div class="actions">
+            <button class="btn primary" id="cv-tojson-run" disabled>转换并下载</button>
+            <button class="btn" id="cv-tojson-copy" disabled>复制结果</button>
+          </div>
+        </div>
+
+        <div id="cv-pane-toexcel" class="pane" hidden>
+          <label class="lbl">粘贴 JSON（对象数组，如 <code>[{"名称":"张三","数量":2}]</code>）或 CSV 文本；也可以直接选择文件：</label>
+          <textarea id="cv-input" class="ta" rows="8" placeholder='[{"name": "张三", "age": 20}, {"name": "李四", "age": 25}]&#10;或粘贴 CSV 文本（第一行为表头）'></textarea>
+          <div class="opts">
+            <label>输出格式
+              <select id="cv-out-format2">
+                <option value="xlsx">Excel (.xlsx)</option>
+                <option value="csv">CSV (.csv)</option>
+              </select>
+            </label>
+            <button class="btn" id="cv-file2-btn">选择文件 (.json / .csv)</button>
+            <input type="file" id="cv-file2" accept=".json,.csv,.txt" hidden>
+          </div>
+          <pre id="cv-toexcel-preview" class="preview" hidden></pre>
+          <div class="actions">
+            <button class="btn primary" id="cv-toexcel-run">转换并下载</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Markdown 编辑器 ===================== -->
+    <section id="view-markdown" class="view" hidden>
+      <div class="card md-card">
+        <div class="card-title">📝 Markdown 编辑器</div>
+        <p class="muted">左侧编辑，右侧实时预览（marked 渲染 + DOMPurify 消毒）。内容自动保存到本地，关闭浏览器后仍在。</p>
+        <div class="md-toolbar" id="md-toolbar">
+          <button data-md="bold" title="加粗">B</button>
+          <button data-md="italic" title="斜体"><i>I</i></button>
+          <button data-md="heading" title="标题">H</button>
+          <button data-md="link" title="链接">🔗</button>
+          <button data-md="image" title="图片">🖼️</button>
+          <button data-md="inlinecode" title="行内代码">&lt;/&gt;</button>
+          <button data-md="codeblock" title="代码块">{ }</button>
+          <button data-md="quote" title="引用">❝</button>
+          <button data-md="ul" title="无序列表">•≡</button>
+          <button data-md="ol" title="有序列表">1≡</button>
+          <button data-md="table" title="表格">▦</button>
+          <button data-md="hr" title="分割线">―</button>
+        </div>
+        <div class="md-split">
+          <textarea id="md-input" class="ta md-input" spellcheck="false" placeholder="在这里输入 Markdown…&#10;&#10;# 标题&#10;**加粗**  *斜体*  `代码`&#10;- 列表项"></textarea>
+          <div id="md-preview" class="md-preview"></div>
+        </div>
+        <div class="actions">
+          <span class="muted" id="md-stats"></span>
+          <span class="spacer"></span>
+          <button class="btn" id="md-open">导入 .md</button>
+          <input type="file" id="md-file" accept=".md,.markdown,.txt" hidden>
+          <button class="btn" id="md-copy">复制 HTML</button>
+          <button class="btn" id="md-download-md">下载 .md</button>
+          <button class="btn" id="md-download-html">下载 .html</button>
+          <button class="btn ghost" id="md-clear">清空</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 二维码工具：生成 + 识别 ===================== -->
+    <section id="view-qrcode" class="view" hidden>
+      <div class="card">
+        <div class="card-title">🔳 二维码生成</div>
+        <p class="muted">基于 qrcode.js，在本地绘制高清 PNG，自带安静区（留白），手机扫码更稳定。</p>
+        <div class="qr-wrap">
+          <div class="qr-form">
+            <label class="lbl">二维码内容</label>
+            <textarea id="qr-text" class="ta" rows="5" placeholder="输入文字、网址（如 https://example.com）、WiFi 信息等"></textarea>
+            <div class="opts">
+              <label>尺寸
+                <select id="qr-size">
+                  <option value="200">200 px</option>
+                  <option value="300" selected>300 px</option>
+                  <option value="400">400 px</option>
+                  <option value="500">500 px</option>
+                </select>
+              </label>
+              <label>纠错级别
+                <select id="qr-ec">
+                  <option value="L">L（可修复 7%）</option>
+                  <option value="M" selected>M（可修复 15%）</option>
+                  <option value="Q">Q（可修复 25%）</option>
+                  <option value="H">H（可修复 30%）</option>
+                </select>
+              </label>
+              <label>前景色 <input type="color" id="qr-dark" value="#000000"></label>
+              <label>背景色 <input type="color" id="qr-light" value="#ffffff"></label>
+            </div>
+            <div class="actions">
+              <button class="btn primary" id="qr-download" disabled>下载 PNG</button>
+            </div>
+          </div>
+          <div class="qr-preview">
+            <div id="qr-out"></div>
+            <div class="muted" id="qr-hint">输入内容后自动生成</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔍 二维码识别</div>
+        <p class="muted">基于 jsQR 本地解码，图片不会上传。支持拖入、选择或直接 <b>Ctrl+V 粘贴截图</b>；模糊、过小或大角度倾斜的图片可能识别失败。</p>
+        <div id="qd-drop" class="dropzone">点击选择 / 拖入图片 / Ctrl+V 粘贴截图</div>
+        <input type="file" id="qd-file" accept="image/*" hidden>
+        <div id="qd-preview" class="rb-frame checker" style="max-width: 280px;" hidden>
+          <img id="qd-img" alt="待识别图片" style="max-width: 100%; max-height: 240px;">
+        </div>
+        <div id="qd-result" hidden>
+          <label class="lbl">识别结果</label>
+          <textarea id="qd-text" class="ta" rows="3"></textarea>
+          <div class="actions">
+            <button class="btn" id="qd-copy">复制内容</button>
+            <button class="btn" id="qd-open" hidden>打开链接 ↗</button>
+            <button class="btn primary" id="qd-to-gen">用生成工具重新制作 ↓</button>
+          </div>
+        </div>
+        <div id="qd-hint" class="file-chip" hidden></div>
+      </div>
+    </section>
+
+    <!-- ===================== 音频工具 ===================== -->
+    <section id="view-audio" class="view" hidden>
+      <div class="card">
+        <div class="card-title">🎵 音频可视化</div>
+        <p class="muted">Web Audio API 实时分析：上传音乐播放，Winamp 风格频谱与波形。支持 MP3 / WAV / OGG / M4A。</p>
+        <div id="av-drop" class="dropzone">点击选择 或 拖入音频文件</div>
+        <input type="file" id="av-file" accept="audio/*" hidden>
+        <div id="av-info" class="muted" hidden></div>
+        <canvas id="av-canvas" class="vis-canvas" height="240"></canvas>
+        <div class="opts">
+          <label>可视化
+            <select id="av-mode">
+              <option value="bars">频谱</option>
+              <option value="wave">波形</option>
+              <option value="both" selected>频谱 + 波形</option>
+            </select>
+          </label>
+          <label>音量 <input type="range" id="av-volume" min="0" max="100" value="80"></label>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="av-play" disabled>▶ 播放</button>
+          <input type="range" id="av-seek" min="0" max="1000" value="0" style="flex: 1;">
+          <span class="mono muted" id="av-time">0:00 / 0:00</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">✂️ 音频剪辑</div>
+        <p class="muted">在波形上拖动选择区域：裁剪、删除、淡入淡出、多文件拼接、变速不变调（时域拉伸），导出 WAV / MP3（lamejs 本地编码）。</p>
+        <div id="ae-drop" class="dropzone">点击选择 或 拖入音频（可多次添加以拼接）</div>
+        <input type="file" id="ae-file" accept="audio/*" multiple hidden>
+        <div id="ae-info" class="muted" hidden></div>
+        <canvas id="ae-canvas" class="vis-canvas" height="120"></canvas>
+        <div class="muted" id="ae-sel-info" style="margin: 8px 0;">在波形上拖动鼠标选择区域；单击取消选择。</div>
+        <div class="tool-row">
+          <button class="tool-btn" id="ae-play-all" disabled>▶ 播放全部</button>
+          <button class="tool-btn" id="ae-play-sel" disabled>▶ 播放选区</button>
+          <button class="tool-btn" id="ae-play-toggle" disabled>▶ 播放</button>
+          <span class="vsep"></span>
+          <button class="tool-btn" id="ae-cut" disabled>裁剪保留选区</button>
+          <button class="tool-btn" id="ae-del" disabled>删除选区</button>
+          <button class="tool-btn" id="ae-undo" disabled>撤销</button>
+          <button class="tool-btn" id="ae-reset" disabled>重置</button>
+        </div>
+        <div class="opts">
+          <label><span>淡入 <input type="number" id="ae-fadein" value="0.5" min="0" max="10" step="0.1" style="width: 64px;"></span> 秒</label>
+          <label><span>淡出 <input type="number" id="ae-fadeout" value="0.5" min="0" max="10" step="0.1" style="width: 64px;"></span> 秒</label>
+          <button class="btn" id="ae-fade" disabled>应用淡入淡出</button>
+          <label><span>变速不变调 <span id="ae-t-val" class="mono">1.00</span>×</span>
+            <input type="range" id="ae-tempo" min="50" max="200" value="100">
+          </label>
+          <label>导出格式
+            <select id="ae-format">
+              <option value="wav">WAV（无损）</option>
+              <option value="mp3">MP3（192kbps）</option>
+            </select>
+          </label>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="ae-export" disabled>导出音频</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 视频工具 ===================== -->
+    <section id="view-video" class="view" hidden>
+      <div class="card">
+        <div class="card-title">🎬 视频转 GIF</div>
+        <p class="muted">截取视频片段转 GIF（256 色量化，帧率 / 尺寸可调）。支持浏览器可播放的格式（MP4 / WebM 等），全部本地处理。</p>
+        <div id="gf-drop" class="dropzone">点击选择 或 拖入视频</div>
+        <input type="file" id="gf-file" accept="video/*" hidden>
+        <div id="gf-info" class="muted" hidden></div>
+        <video id="gf-video" class="video-el" controls muted hidden></video>
+        <div class="opts">
+          <label>开始 秒 <input type="number" id="gf-start" value="0" min="0" step="0.1" style="width: 90px;"></label>
+          <label>结束 秒 <input type="number" id="gf-end" value="3" min="0" step="0.1" style="width: 90px;"></label>
+          <button class="btn" id="gf-set-start">◀ 设为开始</button>
+          <button class="btn" id="gf-set-end">设为结束 ▶</button>
+        </div>
+        <div class="opts">
+          <label>帧率
+            <select id="gf-fps">
+              <option value="5">5 fps</option>
+              <option value="10" selected>10 fps</option>
+              <option value="15">15 fps</option>
+            </select>
+          </label>
+          <label>宽度
+            <select id="gf-width">
+              <option value="240">240 px</option>
+              <option value="320">320 px</option>
+              <option value="480" selected>480 px</option>
+              <option value="0">原尺寸</option>
+            </select>
+          </label>
+          <label>色彩
+            <select id="gf-colors">
+              <option value="128">128 色（更小）</option>
+              <option value="256" selected>256 色</option>
+            </select>
+          </label>
+        </div>
+        <div class="muted" id="gf-estimate">预计帧数：—</div>
+        <div class="actions">
+          <button class="btn primary" id="gf-run" disabled>转换为 GIF</button>
+          <button class="btn" id="gf-download" disabled>下载 GIF</button>
+        </div>
+        <div id="gf-progress" class="rb-status" hidden>
+          <div class="muted" id="gf-progress-text"></div>
+          <div class="rb-bar"><div id="gf-bar"></div></div>
+        </div>
+        <div id="gf-result" hidden>
+          <label class="lbl">GIF 预览</label>
+          <div class="rb-frame checker" style="max-width: 480px;"><img id="gf-img" alt="GIF 预览"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🖼️ 视频帧提取</div>
+        <p class="muted">按时间轴精确截图，生成缩略图网格。请先在上方载入视频（与转 GIF 共用），可单张下载或 ZIP 打包。</p>
+        <div class="opts">
+          <label>提取方式
+            <select id="fe-mode">
+              <option value="interval" selected>按间隔（每 N 秒）</option>
+              <option value="count">固定数量（共 N 帧）</option>
+            </select>
+          </label>
+          <label><span id="fe-n-label">间隔 秒</span>
+            <input type="number" id="fe-n" value="1" min="0.1" step="0.1" style="width: 80px;">
+          </label>
+          <label>开始 秒 <input type="number" id="fe-start" value="0" min="0" step="0.1" style="width: 90px;"></label>
+          <label>结束 秒 <input type="number" id="fe-end" placeholder="视频结尾" min="0" step="0.1" style="width: 90px;"></label>
+          <label>格式
+            <select id="fe-format">
+              <option value="image/png">PNG</option>
+              <option value="image/jpeg" selected>JPEG</option>
+            </select>
+          </label>
+          <label>宽度 px <input type="number" id="fe-width" value="480" min="80" step="10" style="width: 80px;"></label>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="fe-run" disabled>提取帧</button>
+          <button class="btn" id="fe-zip" disabled>全部打包下载 (ZIP)</button>
+          <span class="muted" id="fe-info"></span>
+        </div>
+        <div id="fe-grid" class="thumb-grid"></div>
+      </div>
+    </section>
+
+    <!-- ===================== 密码生成器 + 哈希计算器 ===================== -->
+    <section id="view-security" class="view" hidden>
+      <div class="card">
+        <div class="card-title">🔐 密码生成器</div>
+        <div class="pw-display mono" id="pw-out" title="点击复制">—</div>
+        <div class="strength">
+          <div class="strength-bar"><div id="pw-strength-fill"></div></div>
+          <span class="muted" id="pw-strength-text"></span>
+        </div>
+        <div class="opts wrap">
+          <label><span>长度 <span id="pw-len-val" class="mono">16</span></span>
+            <input type="range" id="pw-len" min="4" max="64" value="16">
+          </label>
+          <label class="chk"><input type="checkbox" id="pw-upper" checked> 大写字母 A-Z</label>
+          <label class="chk"><input type="checkbox" id="pw-lower" checked> 小写字母 a-z</label>
+          <label class="chk"><input type="checkbox" id="pw-digit" checked> 数字 0-9</label>
+          <label class="chk"><input type="checkbox" id="pw-symbol" checked> 符号 !@#$</label>
+          <label class="chk"><input type="checkbox" id="pw-ambiguous"> 排除易混淆字符 (l I 1 O 0)</label>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="pw-run">⟳ 生成密码</button>
+          <button class="btn" id="pw-copy">复制</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">#️⃣ 哈希计算器</div>
+        <p class="muted">支持对文本或文件计算 MD5、SHA-1、SHA-256、SHA-384、SHA-512。SHA 系列使用浏览器原生 Web Crypto。</p>
+        <textarea id="hash-text" class="ta" rows="4" placeholder="输入要计算哈希的文本，或选择文件（二选一，后操作者生效）"></textarea>
+        <div class="opts">
+          <button class="btn" id="hash-file-btn">选择文件</button>
+          <input type="file" id="hash-file" hidden>
+          <span class="muted" id="hash-source"></span>
+        </div>
+        <table class="hash-table">
+          <tbody id="hash-out"><tr><td class="muted">等待输入…</td></tr></tbody>
+        </table>
+        <div class="actions">
+          <button class="btn" id="hash-copy-all" disabled>全部复制</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 流程图 / 导图 ===================== -->
+    <section id="view-flowchart" class="view" hidden>
+      <div class="card">
+        <button class="fs-btn" id="fc-fullscreen" title="全屏（Esc 退出）">⛶ 全屏</button>
+        <div class="card-title">🧠 流程图 / 导图</div>
+        <p class="muted">Cytoscape 本地图编辑：添加节点、连线模式下<b>依次点击两个节点</b>建立箭头，双击节点改文字（或选中后在下方输入框修改），Del 删除选中，支持自动布局与 PNG / JSON 导出。全部本地处理。</p>
+        <div class="tool-row" id="fc-tools">
+          <button class="tool-btn active" data-tool="select">↖ 选择</button>
+          <button class="tool-btn" data-tool="connect">➘ 连线</button>
+          <span class="vsep"></span>
+          <button class="tool-btn" data-add="round" title="过程 / 步骤">＋ 矩形</button>
+          <button class="tool-btn" data-add="ellipse" title="开始 / 结束">＋ 椭圆</button>
+          <button class="tool-btn" data-add="diamond" title="判断 / 决策">＋ 菱形</button>
+          <button class="tool-btn" data-add="parallelogram" title="输入 / 输出数据">＋ 平行四边</button>
+          <button class="tool-btn" data-add="hexagon" title="准备 / 初始化">＋ 六边形</button>
+          <button class="tool-btn" data-add="octagon" title="预定义过程 / 子流程">＋ 八边形</button>
+          <button class="tool-btn" data-add="star" title="备注 / 连接点">＋ 星形</button>
+          <span class="vsep"></span>
+          <button class="tool-btn" data-layout="LR">→ 左右布局</button>
+          <button class="tool-btn" data-layout="TB">↓ 上下布局</button>
+          <button class="tool-btn" id="fc-example">示例</button>
+          <button class="tool-btn" id="fc-delete">删除选中</button>
+        </div>
+        <div class="opts">
+          <label>选中节点文字
+            <input type="text" id="fc-node-text" style="width: 200px;" placeholder="双击节点或选中后编辑">
+          </label>
+          <label>文字颜色
+            <input type="color" id="fc-text-color" value="#ffffff">
+          </label>
+        </div>
+        <div id="fc-canvas" class="cy-wrap"></div>
+        <div class="actions">
+          <button class="btn primary" id="fc-png">导出 PNG</button>
+          <button class="btn" id="fc-save">保存 JSON</button>
+          <button class="btn" id="fc-load">载入 JSON</button>
+          <input type="file" id="fc-file" accept=".json" hidden>
+          <button class="btn ghost" id="fc-clear">清空</button>
+          <span class="muted" id="fc-stats"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 画板 / 标注 ===================== -->
+    <section id="view-board" class="view" hidden>
+      <div class="card">
+        <button class="fs-btn" id="bd-fullscreen" title="全屏（Esc 退出）">⛶ 全屏</button>
+        <div class="card-title">🎨 画板 / 标注</div>
+        <p class="muted">Fabric.js 本地画板：画笔、直线、矩形、椭圆、文字，可插入图片进行标注。Ctrl+Z 撤销，Del 删除选中，导出 PNG / JSON。</p>
+        <div class="tool-row" id="bd-tools">
+          <button class="tool-btn active" data-tool="select">↖ 选择</button>
+          <button class="tool-btn" data-tool="brush">✏️ 画笔</button>
+          <button class="tool-btn" data-tool="line">╱ 直线</button>
+          <button class="tool-btn" data-tool="rect">▭ 矩形</button>
+          <button class="tool-btn" data-tool="ellipse">◯ 椭圆</button>
+          <button class="tool-btn" data-tool="triangle">△ 三角形</button>
+          <button class="tool-btn" data-tool="star">★ 五角星</button>
+          <button class="tool-btn" data-tool="arrow">→ 箭头</button>
+          <button class="tool-btn" data-tool="text">🅣 文字</button>
+        </div>
+        <div class="opts">
+          <label>颜色 <input type="color" id="bd-color" value="#e5484d"></label>
+          <label>线宽 <span id="bd-w-val" class="mono">3</span>
+            <input type="range" id="bd-width" min="1" max="20" value="3">
+          </label>
+          <button class="btn" id="bd-image">插入图片</button>
+          <input type="file" id="bd-file" accept="image/*" hidden>
+          <button class="btn" id="bd-undo">撤销</button>
+        </div>
+        <div class="board-wrap"><canvas id="board-canvas"></canvas></div>
+        <div class="actions">
+          <button class="btn primary" id="bd-png">导出 PNG</button>
+          <button class="btn" id="bd-save">保存 JSON</button>
+          <button class="btn" id="bd-load">载入 JSON</button>
+          <input type="file" id="bd-file-json" accept=".json" hidden>
+          <button class="btn ghost" id="bd-clear">清空画布</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<div id="toast-box"></div>
+
+<!-- 第三方库（全部本地，离线可用） -->
+<script src="vendor/dagre.min.js"></script>
+<script src="vendor/cytoscape-dagre.min.js"></script>
+<script src="vendor/cytoscape.min.js"></script>
+<script src="vendor/fabric.min.js"></script>
+<script src="vendor/pdf-lib.min.js"></script>
+<script src="vendor/pdf.min.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="vendor/jszip.min.js"></script>
+<script src="vendor/marked.min.js"></script>
+<script src="vendor/purify.min.js"></script>
+<script src="vendor/qrcode.min.js"></script>
+<script src="vendor/jsqr.min.js"></script>
+<script src="vendor/omggif.min.js"></script>
+<script src="vendor/lame.min.js"></script>
+<!-- 应用代码 -->
+<script src="js/md5.js"></script>
+<script src="js/app.js"></script>
+<script src="js/image.js"></script>
+<script src="js/removebg.js"></script>
+<script src="js/pdf.js"></script>
+<script src="js/convert.js"></script>
+<script src="js/markdown.js"></script>
+<script src="js/qrcode.js"></script>
+<script src="js/security.js"></script>
+<script src="js/flowchart.js"></script>
+<script src="js/board.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/video.js"></script>
+</body>
+</html>
